@@ -18,9 +18,17 @@ interface UploadPanelProps {
   onSubmit: (dataUrl: string, fileName: string) => void;
   /** Called when the user picks a new file, so the parent can clear a stale error. */
   onReset?: () => void;
+  /** A file loaded from outside (e.g. a sample); flows through the same validation/preview. */
+  presetFile?: File | null;
 }
 
-export function UploadPanel({ status, error, onSubmit, onReset }: UploadPanelProps) {
+export function UploadPanel({
+  status,
+  error,
+  onSubmit,
+  onReset,
+  presetFile,
+}: UploadPanelProps) {
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
@@ -54,6 +62,12 @@ export function UploadPanel({ status, error, onSubmit, onReset }: UploadPanelPro
     },
     [onReset],
   );
+
+  // A sample chosen elsewhere flows through the same validation + preview path.
+  useEffect(() => {
+    if (presetFile) handleFile(presetFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetFile]);
 
   // Paste an image straight from the clipboard.
   useEffect(() => {

@@ -10,12 +10,19 @@ import type { Nutrition } from "@/lib/types";
 
 type Phase = "idle" | "analyzing" | "ready" | "error";
 
+const SAMPLES = [
+  { src: "/samples/apple.png", label: "Apples" },
+  { src: "/samples/avocado.png", label: "Avocado" },
+  { src: "/samples/banana.png", label: "Bananas" },
+];
+
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [nutrition, setNutrition] = useState<Nutrition | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [scanId, setScanId] = useState(0); // bumped per analysis → fresh chat session
+  const [presetFile, setPresetFile] = useState<File | null>(null);
 
   async function analyze(dataUrl: string) {
     setPhase("analyzing");
@@ -43,6 +50,19 @@ export default function Home() {
     setError(null);
     setNutrition(null);
     setImage(null);
+    setPresetFile(null);
+  }
+
+  // Load a bundled sample into the upload preview (same validation path as a real pick).
+  async function pickSample(src: string, label: string) {
+    if (phase === "analyzing") return;
+    try {
+      const res = await fetch(src);
+      const blob = await res.blob();
+      setPresetFile(new File([blob], `${label}.png`, { type: blob.type || "image/png" }));
+    } catch {
+      setError("Couldn't load that sample — try uploading your own.");
+    }
   }
 
   return (
@@ -129,11 +149,33 @@ export default function Home() {
                 }
                 error={error}
                 onSubmit={analyze}
+                presetFile={presetFile}
                 onReset={() => {
                   if (phase === "error") setPhase("idle");
                   setError(null);
                 }}
               />
+            </div>
+
+            <div className="mt-5">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-3">
+                or try a sample
+              </p>
+              <div className="mt-2.5 flex gap-3">
+                {SAMPLES.map((s) => (
+                  <button
+                    key={s.src}
+                    type="button"
+                    disabled={phase === "analyzing"}
+                    onClick={() => pickSample(s.src, s.label)}
+                    aria-label={`Use sample: ${s.label}`}
+                    className="overflow-hidden rounded-md border border-line transition-colors hover:border-accent focus-visible:border-accent disabled:opacity-50"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={s.src} alt={s.label} className="h-16 w-24 object-cover" />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

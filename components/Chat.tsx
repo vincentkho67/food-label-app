@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage, Nutrition } from "@/lib/types";
 
+const SUGGESTIONS = [
+  "Is this good for a cut?",
+  "How could I lower the calories?",
+  "What's the biggest macro here?",
+];
+
 export function Chat({ nutrition }: { nutrition: Nutrition }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -80,12 +86,24 @@ export function Chat({ nutrition }: { nutrition: Nutrition }) {
         className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5"
       >
         {empty ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
+          <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
             <p className="max-w-xs text-pretty text-sm leading-relaxed text-ink-2">
               Ask anything about{" "}
               <span className="font-medium text-ink">{nutrition.food_name}</span> —
               calories, swaps, how it fits your day.
             </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => send(s)}
+                  className="rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] text-ink-2 transition-colors hover:border-accent hover:text-accent"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           messages.map((m, i) => {
