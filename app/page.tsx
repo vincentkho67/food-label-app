@@ -4,6 +4,7 @@ import { useState } from "react";
 import { UploadPanel } from "@/components/UploadPanel";
 import { NutritionLabel } from "@/components/NutritionLabel";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
+import { Chat } from "@/components/Chat";
 import { Button } from "@/components/ui/Button";
 import type { Nutrition } from "@/lib/types";
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [nutrition, setNutrition] = useState<Nutrition | null>(null);
   const [image, setImage] = useState<string | null>(null);
+  const [scanId, setScanId] = useState(0); // bumped per analysis → fresh chat session
 
   async function analyze(dataUrl: string) {
     setPhase("analyzing");
@@ -28,6 +30,7 @@ export default function Home() {
       if (!res.ok) throw new Error(`analyze failed: ${res.status}`);
       const data = (await res.json()) as Nutrition;
       setNutrition(data);
+      setScanId((n) => n + 1);
       setPhase("ready");
     } catch {
       setPhase("error");
@@ -45,7 +48,7 @@ export default function Home() {
   return (
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4">
           <button
             onClick={reset}
             className="flex items-baseline gap-2.5 text-left"
@@ -62,42 +65,48 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-10 sm:py-16">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-8 sm:py-12">
         {phase === "ready" && nutrition ? (
-          <div className="mx-auto w-full max-w-md">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h1 className="text-balance font-display text-2xl font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-3xl">
-                  {nutrition.food_name}
-                </h1>
-                <ConfidenceBadge level={nutrition.confidence} className="mt-2" />
+          <div className="grid flex-1 gap-8 lg:grid-cols-[21rem_minmax(0,1fr)] lg:gap-12">
+            {/* Left: the food + its label, kept in view beside the chat. */}
+            <div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h1 className="text-balance font-display text-2xl font-semibold leading-tight tracking-[-0.02em] text-ink">
+                    {nutrition.food_name}
+                  </h1>
+                  <ConfidenceBadge level={nutrition.confidence} className="mt-2" />
+                </div>
+                <Button variant="subtle" onClick={reset} className="shrink-0">
+                  Scan another
+                </Button>
               </div>
-              <Button variant="subtle" onClick={reset} className="shrink-0">
-                Scan another
-              </Button>
+
+              {image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={image}
+                  alt={nutrition.food_name}
+                  className="mt-4 max-h-44 w-full rounded-md border border-line object-cover"
+                />
+              )}
+
+              {nutrition.notes && (
+                <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-3">
+                    Note&nbsp;
+                  </span>
+                  {nutrition.notes}
+                </p>
+              )}
+
+              <div className="mt-6 flex justify-center lg:justify-start">
+                <NutritionLabel data={nutrition} />
+              </div>
             </div>
 
-            {image && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={image}
-                alt={nutrition.food_name}
-                className="mt-4 max-h-56 w-full rounded-md border border-line object-cover"
-              />
-            )}
-
-            {nutrition.notes && (
-              <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
-                <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-3">
-                  Note&nbsp;
-                </span>
-                {nutrition.notes}
-              </p>
-            )}
-
-            <div className="mt-6 flex justify-center">
-              <NutritionLabel data={nutrition} />
-            </div>
+            {/* Right: streaming chat grounded in this food. */}
+            <Chat key={scanId} nutrition={nutrition} />
           </div>
         ) : (
           <div className="mx-auto w-full max-w-xl">
@@ -131,7 +140,7 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto w-full max-w-5xl px-5 py-4">
+        <div className="mx-auto w-full max-w-6xl px-5 py-4">
           <p className="font-mono text-[11px] text-ink-3">
             Estimates from a photo — not medical or dietary advice.
           </p>
