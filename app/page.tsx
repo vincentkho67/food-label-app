@@ -13,7 +13,7 @@ export default function Home() {
   const [, setNutrition] = useState<Nutrition | null>(null);
   const [, setImage] = useState<string | null>(null);
 
-  async function analyze(dataUrl: string, _fileName: string) {
+  async function analyze(dataUrl: string) {
     setPhase("analyzing");
     setError(null);
     setImage(dataUrl);
