@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ── Design tokens ───────────────────────────────────────────────────────────
+   Single source of truth. Clinical / FDA-paper direction: cool off-white canvas,
+   near-black ink, ONE accent (spruce green), the Nutrition Facts label as the
+   loud visual anchor and everything else quiet around it. */
+@theme {
+  /* Surfaces — cool neutral, 3 steps. The white "paper" pops on the gray canvas. */
+  --color-canvas: #eceef1;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f7f9;
+
+  /* Ink — 3 steps, all AA on canvas/surface. */
+  --color-ink: #16181d;
+  --color-ink-2: #565b63;
+  --color-ink-3: #8a9099;
+
+  /* Hairlines. */
+  --color-line: #dde0e4;
+  --color-line-strong: #c3c8ce;
+
+  /* The label's own ink — true-ish black for authentic FDA rules. */
+  --color-label: #0a0a0a;
+
+  /* ONE accent. CTAs, focus, selected, key data — nowhere else. */
+  --color-accent: #0f7c5e;
+  --color-accent-strong: #0b6149;
+  --color-accent-ink: #ffffff;
+
+  /* Semantic, desaturated — only ever in semantic context (confidence). */
+  --color-warn: #9a6b1e;
+  --color-bad: #b04a35;
+
+  /* Radii — tight = serious. The label itself stays sharp (0). */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Three faces, wired to next/font CSS vars (see layout.tsx). */
+  --font-display: var(--font-space);
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Numbers read as data everywhere. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+
+  *:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
