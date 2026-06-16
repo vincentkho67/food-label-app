@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { UploadPanel } from "@/components/UploadPanel";
+import { NutritionLabel } from "@/components/NutritionLabel";
+import { ConfidenceBadge } from "@/components/ConfidenceBadge";
+import { Button } from "@/components/ui/Button";
 import type { Nutrition } from "@/lib/types";
 
 type Phase = "idle" | "analyzing" | "ready" | "error";
@@ -9,9 +12,8 @@ type Phase = "idle" | "analyzing" | "ready" | "error";
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
-  // Held for the next checkpoints (label + chat); set once /api/analyze answers.
-  const [, setNutrition] = useState<Nutrition | null>(null);
-  const [, setImage] = useState<string | null>(null);
+  const [nutrition, setNutrition] = useState<Nutrition | null>(null);
+  const [image, setImage] = useState<string | null>(null);
 
   async function analyze(dataUrl: string) {
     setPhase("analyzing");
@@ -33,57 +35,99 @@ export default function Home() {
     }
   }
 
+  function reset() {
+    setPhase("idle");
+    setError(null);
+    setNutrition(null);
+    setImage(null);
+  }
+
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-line bg-surface/80 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-line bg-surface/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4">
-          <div className="flex items-baseline gap-2.5">
+          <button
+            onClick={reset}
+            className="flex items-baseline gap-2.5 text-left"
+            aria-label="Start over"
+          >
             <span className="font-display text-lg font-bold tracking-[-0.02em] text-ink">
               Nutrition Facts
             </span>
             <span className="hidden font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3 sm:inline">
               photo&nbsp;scanner
             </span>
-          </div>
+          </button>
           <span className="font-mono text-[11px] text-ink-3">gpt-4o&nbsp;·&nbsp;vision</span>
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-10 sm:py-16">
-        <div className="mx-auto w-full max-w-xl">
-          <h1 className="text-balance font-display text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl">
-            What&apos;s on the plate?
-          </h1>
-          <p className="mt-3 text-pretty text-[15px] leading-relaxed text-ink-2">
-            Drop in a food photo and get an FDA-style Nutrition Facts label —
-            then ask it anything.
-          </p>
+        {phase === "ready" && nutrition ? (
+          <div className="mx-auto w-full max-w-md">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h1 className="text-balance font-display text-2xl font-semibold leading-tight tracking-[-0.02em] text-ink sm:text-3xl">
+                  {nutrition.food_name}
+                </h1>
+                <ConfidenceBadge level={nutrition.confidence} className="mt-2" />
+              </div>
+              <Button variant="subtle" onClick={reset} className="shrink-0">
+                Scan another
+              </Button>
+            </div>
 
-          <div className="mt-7">
-            <UploadPanel
-              status={
-                phase === "analyzing"
-                  ? "analyzing"
-                  : phase === "error"
-                    ? "error"
-                    : "idle"
-              }
-              error={error}
-              onSubmit={analyze}
-              onReset={() => {
-                if (phase === "error") setPhase("idle");
-                setError(null);
-              }}
-            />
+            {image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={image}
+                alt={nutrition.food_name}
+                className="mt-4 max-h-56 w-full rounded-md border border-line object-cover"
+              />
+            )}
+
+            {nutrition.notes && (
+              <p className="mt-3 text-[13px] leading-relaxed text-ink-2">
+                <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-3">
+                  Note&nbsp;
+                </span>
+                {nutrition.notes}
+              </p>
+            )}
+
+            <div className="mt-6 flex justify-center">
+              <NutritionLabel data={nutrition} />
+            </div>
           </div>
-
-          {/* Label + chat land here in the next checkpoints. */}
-          {phase === "ready" && (
-            <p className="mt-6 font-mono text-sm text-ink-2">
-              Analyzed ✓ — label &amp; chat coming in the next checkpoint.
+        ) : (
+          <div className="mx-auto w-full max-w-xl">
+            <h1 className="text-balance font-display text-3xl font-semibold leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl">
+              What&apos;s on the plate?
+            </h1>
+            <p className="mt-3 text-pretty text-[15px] leading-relaxed text-ink-2">
+              Drop in a food photo and get an FDA-style Nutrition Facts label —
+              then ask it anything.
             </p>
-          )}
-        </div>
+
+            <div className="mt-7">
+              <UploadPanel
+                status={
+                  phase === "analyzing"
+                    ? "analyzing"
+                    : phase === "error"
+                      ? "error"
+                      : "idle"
+                }
+                error={error}
+                onSubmit={analyze}
+                onReset={() => {
+                  if (phase === "error") setPhase("idle");
+                  setError(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </main>
 
       <footer className="border-t border-line">
