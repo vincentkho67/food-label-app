@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { UploadPanel } from "@/components/UploadPanel";
+import { useRef, useState } from "react";
+import { UploadPanel, type UploadPanelHandle } from "@/components/UploadPanel";
 import { NutritionLabel } from "@/components/NutritionLabel";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
 import { Chat } from "@/components/Chat";
@@ -22,7 +22,7 @@ export default function Home() {
   const [nutrition, setNutrition] = useState<Nutrition | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [scanId, setScanId] = useState(0); // bumped per analysis → fresh chat session
-  const [presetFile, setPresetFile] = useState<File | null>(null);
+  const uploadRef = useRef<UploadPanelHandle>(null);
 
   async function analyze(dataUrl: string) {
     setPhase("analyzing");
@@ -50,7 +50,6 @@ export default function Home() {
     setError(null);
     setNutrition(null);
     setImage(null);
-    setPresetFile(null);
   }
 
   // Load a bundled sample into the upload preview (same validation path as a real pick).
@@ -59,7 +58,9 @@ export default function Home() {
     try {
       const res = await fetch(src);
       const blob = await res.blob();
-      setPresetFile(new File([blob], `${label}.png`, { type: blob.type || "image/png" }));
+      uploadRef.current?.loadFile(
+        new File([blob], `${label}.png`, { type: blob.type || "image/png" }),
+      );
     } catch {
       setError("Couldn't load that sample — try uploading your own.");
     }
@@ -147,9 +148,9 @@ export default function Home() {
                       ? "error"
                       : "idle"
                 }
+                ref={uploadRef}
                 error={error}
                 onSubmit={analyze}
-                presetFile={presetFile}
                 onReset={() => {
                   if (phase === "error") setPhase("idle");
                   setError(null);
